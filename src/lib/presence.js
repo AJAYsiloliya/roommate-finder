@@ -66,8 +66,6 @@ export function setupPresence(userId) {
       connectionRef = null;
 
       remove(currentConnection).catch(() => {});
-
-      set(lastSeenRef, serverTimestamp()).catch(() => {});
     }
   };
 }

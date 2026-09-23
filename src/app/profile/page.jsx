@@ -272,14 +272,20 @@ export default function Profile() {
 
   // Logout
   const handleLogout = async () => {
-    try {
-      setError("");
-      await signOut(auth);
-      router.replace("/login");
-    } catch {
-      setError("Failed to logout. Please try again.");
-    }
-  };
+  try {
+    setError("");
+
+    window.dispatchEvent(
+      new Event("roommate:logout")
+    );
+
+    await signOut(auth);
+
+    router.replace("/login");
+  } catch {
+    setError("Failed to logout. Please try again.");
+  }
+};
 
   // Auth state is still being checked
   if (authLoading) {

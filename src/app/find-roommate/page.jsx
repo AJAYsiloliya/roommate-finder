@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
@@ -358,6 +359,7 @@ export default function FindRoommate() {
             ))}
           </div>
         )}
+        
       </div>
     </main>
   );
