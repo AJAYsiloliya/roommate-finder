@@ -66,11 +66,12 @@ export default function ChatPage() {
         const profileRef = doc(db, "users", receiverId);
         const profileSnap = await getDoc(profileRef);
 
-        if (profileSnap.exists()) {
-          setProfile(profileSnap.data());
-        } else {
+        if (!profileSnap.exists()) {
           setError("User profile not found.");
+          return;
         }
+
+        setProfile(profileSnap.data());
       } catch {
         setError("Unable to load user profile.");
       } finally {
@@ -83,51 +84,53 @@ export default function ChatPage() {
 
   // Prepare chat
   useEffect(() => {
-    if (!chatId || !currentUser || !receiverId) return;
+    if (!chatId || !currentUser || !receiverId) {
+      return;
+    }
 
     const prepareChat = async () => {
       try {
+        const participants = [
+          currentUser.uid,
+          receiverId,
+        ].sort();
+
         const chatRef = doc(db, "chats", chatId);
-        const chatSnap = await getDoc(chatRef);
 
-        if (!chatSnap.exists()) {
-          const participants = [
-            currentUser.uid,
-            receiverId,
-          ].sort();
-
-          await setDoc(chatRef, {
+        /*
+         * Create the chat if it does not exist.
+         *
+         * merge: true also keeps existing chat fields such as
+         * lastMessage, updatedAt, unreadFor and hiddenFor.
+         */
+        await setDoc(
+          chatRef,
+          {
             participants,
-          });
-        } else {
-          const existingData = chatSnap.data();
-
-          const participants =
-            existingData.participants || [];
-
-          if (
-            participants.length !== 2 ||
-            !participants.includes(currentUser.uid) ||
-            !participants.includes(receiverId)
-          ) {
-            setBlocked(true);
-            setChatReady(false);
-            setError(
-              "Messaging is unavailable for this chat.",
-            );
-            return;
-          }
-        }
+          },
+          {
+            merge: true,
+          },
+        );
 
         setChatReady(true);
         setBlocked(false);
         setError("");
       } catch (error) {
-        setBlocked(false);
         setChatReady(false);
-        setError(
-          error?.message || "Unable to open chat.",
-        );
+
+        if (
+          error?.code === "permission-denied" ||
+          error?.code === "PERMISSION_DENIED"
+        ) {
+          setError(
+            "You cannot open this chat. The conversation may be blocked.",
+          );
+        } else {
+          setError(
+            error?.message || "Unable to open chat.",
+          );
+        }
       }
     };
 
@@ -136,26 +139,46 @@ export default function ChatPage() {
 
   // Chat open hone par unread remove
   useEffect(() => {
-    if (!chatId || !currentUser || !chatReady || blocked) {
+    if (
+      !chatId ||
+      !currentUser ||
+      !chatReady ||
+      blocked
+    ) {
       return;
     }
 
     const markChatAsSeen = async () => {
       try {
-        await updateDoc(doc(db, "chats", chatId), {
-          unreadFor: arrayRemove(currentUser.uid),
-        });
+        await updateDoc(
+          doc(db, "chats", chatId),
+          {
+            unreadFor: arrayRemove(
+              currentUser.uid,
+            ),
+          },
+        );
       } catch {
-        // Ignore
+        // Ignore unread update errors
       }
     };
 
     markChatAsSeen();
-  }, [chatId, currentUser, chatReady, blocked]);
+  }, [
+    chatId,
+    currentUser,
+    chatReady,
+    blocked,
+  ]);
 
   // Messages real-time load
   useEffect(() => {
-    if (!chatId || !currentUser || !chatReady || blocked) {
+    if (
+      !chatId ||
+      !currentUser ||
+      !chatReady ||
+      blocked
+    ) {
       return;
     }
 
@@ -174,12 +197,11 @@ export default function ChatPage() {
     const unsubscribe = onSnapshot(
       messagesQuery,
       (snapshot) => {
-        const messageList = snapshot.docs.map(
-          (messageDoc) => ({
+        const messageList =
+          snapshot.docs.map((messageDoc) => ({
             id: messageDoc.id,
             ...messageDoc.data(),
-          }),
-        );
+          }));
 
         setMessages(messageList);
 
@@ -189,71 +211,101 @@ export default function ChatPage() {
               msg.senderId !== currentUser.uid;
 
             const isUnread =
-              !msg.readBy?.includes(currentUser.uid);
+              !msg.readBy?.includes(
+                currentUser.uid,
+              );
 
-            return isFromOtherUser && isUnread;
+            return (
+              isFromOtherUser &&
+              isUnread
+            );
           })
           .map((msg) => msg.id);
 
         setUnreadMessageIds(unreadIds);
 
-        const markMessagesAsRead = async () => {
-          try {
-            const unreadMessages =
-              snapshot.docs.filter(
-                (messageDoc) => {
-                  const data = messageDoc.data();
-
-                  const isFromOtherUser =
-                    data.senderId !== currentUser.uid;
-
-                  const isUnread =
-                    !data.readBy?.includes(
-                      currentUser.uid,
-                    );
-
-                  return (
-                    isFromOtherUser &&
-                    isUnread
-                  );
-                },
-              );
-
-            await Promise.all(
-              unreadMessages.map(
-                (messageDoc) =>
-                  updateDoc(messageDoc.ref, {
-                    readBy: arrayUnion(
-                      currentUser.uid,
-                    ),
-                  }),
-              ),
-            );
-          } catch {
-            // Ignore
-          }
-        };
-
         if (unreadIds.length > 0) {
+          const markMessagesAsRead =
+            async () => {
+              try {
+                const unreadMessages =
+                  snapshot.docs.filter(
+                    (messageDoc) => {
+                      const data =
+                        messageDoc.data();
+
+                      const isFromOtherUser =
+                        data.senderId !==
+                        currentUser.uid;
+
+                      const isUnread =
+                        !data.readBy?.includes(
+                          currentUser.uid,
+                        );
+
+                      return (
+                        isFromOtherUser &&
+                        isUnread
+                      );
+                    },
+                  );
+
+                await Promise.all(
+                  unreadMessages.map(
+                    (messageDoc) =>
+                      updateDoc(
+                        messageDoc.ref,
+                        {
+                          readBy:
+                            arrayUnion(
+                              currentUser.uid,
+                            ),
+                        },
+                      ),
+                  ),
+                );
+              } catch {
+                // Ignore read-status errors
+              }
+            };
+
           markMessagesAsRead();
         }
       },
-      (error) => {
-        setBlocked(false);
+      (snapshotError) => {
         setChatReady(false);
-        setError(
-          error?.message ||
-            "Unable to load messages.",
-        );
+
+        if (
+          snapshotError?.code ===
+          "permission-denied"
+        ) {
+          setError(
+            "You do not have permission to access these messages.",
+          );
+        } else {
+          setError(
+            snapshotError?.message ||
+              "Unable to load messages.",
+          );
+        }
       },
     );
 
     return () => unsubscribe();
-  }, [chatId, currentUser, chatReady, blocked]);
+  }, [
+    chatId,
+    currentUser,
+    chatReady,
+    blocked,
+  ]);
 
   // Automatically scroll to latest message
   useEffect(() => {
-    if (!chatReady || blocked || messages.length === 0) {
+    if (
+      !chatReady ||
+      blocked ||
+      messages.length === 0
+    ) {
       return;
     }
 
@@ -263,9 +315,13 @@ export default function ChatPage() {
         block: "end",
       });
     });
-  }, [messages, chatReady, blocked]);
+  }, [
+    messages,
+    chatReady,
+    blocked,
+  ]);
 
-  // Send normal user message
+  // Send message
   const handleSend = async () => {
     if (
       !message.trim() ||
@@ -296,21 +352,25 @@ export default function ChatPage() {
         },
       );
 
-      await updateDoc(doc(db, "chats", chatId), {
-        lastMessage: text,
-        updatedAt: serverTimestamp(),
-        unreadFor: arrayUnion(receiverId),
-        hiddenFor: [],
-      });
+      await updateDoc(
+        doc(db, "chats", chatId),
+        {
+          lastMessage: text,
+          updatedAt: serverTimestamp(),
+          unreadFor:
+            arrayUnion(receiverId),
+          hiddenFor: [],
+        },
+      );
 
       setMessage("");
       setError("");
     } catch (error) {
-      setBlocked(false);
-      setChatReady(false);
       setError(
-        error?.message ||
-          "Message could not be sent.",
+        error?.code === "permission-denied"
+          ? "Message could not be sent because you do not have permission."
+          : error?.message ||
+              "Message could not be sent.",
       );
     }
   };
@@ -326,7 +386,7 @@ export default function ChatPage() {
     );
   }
 
-  // Error
+  // Error before profile
   if (error && !profile) {
     return (
       <main className="fixed inset-0 z-40 h-dvh bg-slate-50 px-4 pt-20">
@@ -361,7 +421,6 @@ export default function ChatPage() {
           <div className="shrink-0 border-b border-slate-200 bg-white p-4 sm:p-5">
             <div className="flex items-center gap-3">
 
-              {/* Back */}
               <Link
                 href="/messages"
                 className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-[14px] font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
@@ -374,7 +433,10 @@ export default function ChatPage() {
                 {profile?.photoURL ? (
                   <img
                     src={profile.photoURL}
-                    alt={profile.name || "Profile"}
+                    alt={
+                      profile.name ||
+                      "Profile"
+                    }
                     className="h-11 w-11 rounded-full object-cover"
                   />
                 ) : (
@@ -391,7 +453,8 @@ export default function ChatPage() {
               {/* Name + Status */}
               <div className="min-w-0">
                 <h1 className="truncate font-bold text-slate-900">
-                  {profile?.name || "Unknown"}
+                  {profile?.name ||
+                    "Unknown"}
                 </h1>
 
                 {blocked ? (
@@ -452,81 +515,80 @@ export default function ChatPage() {
                     </p>
                   </div>
                 ) : (
-                  messages.map((msg, index) => {
-                    const isMine =
-                      msg.senderId ===
-                      currentUser?.uid;
+                  messages.map(
+                    (msg, index) => {
+                      const isMine =
+                        msg.senderId ===
+                        currentUser?.uid;
 
-                    const isUnread =
-                      unreadMessageIds.includes(
-                        msg.id,
-                      );
+                      const isUnread =
+                        unreadMessageIds.includes(
+                          msg.id,
+                        );
 
-                    const isLastMessage =
-                      index ===
-                      messages.length - 1;
+                      const isLastMessage =
+                        index ===
+                        messages.length - 1;
 
-                    const isSeen =
-                      isLastMessage &&
-                      isMine &&
-                      msg.readBy?.includes(
-                        receiverId,
-                      );
+                      const isSeen =
+                        isLastMessage &&
+                        isMine &&
+                        msg.readBy?.includes(
+                          receiverId,
+                        );
 
-                    return (
-                      <div key={msg.id}>
-                        {/* Unread */}
-                        {isUnread && (
-                          <div className="my-4 flex items-center gap-3">
-                            <div className="h-px flex-1 bg-blue-100" />
-
-                            <span className="text-xs font-semibold text-blue-600">
-                              Unread
-                            </span>
-
-                            <div className="h-px flex-1 bg-blue-100" />
-                          </div>
-                        )}
-
-                        {/* Normal User Message */}
+                      return (
                         <div
-                          className={`flex flex-col ${
-                            isMine
-                              ? "items-end"
-                              : "items-start"
-                          }`}
+                          key={msg.id}
                         >
-                          <p className="mb-1 text-xs font-semibold text-slate-500">
-                            {isMine
-                              ? "You"
-                              : profile?.name ||
-                                "User"}
-                          </p>
+                          {isUnread && (
+                            <div className="my-4 flex items-center gap-3">
+                              <div className="h-px flex-1 bg-blue-100" />
 
-                          {/* Message */}
+                              <span className="text-xs font-semibold text-blue-600">
+                                Unread
+                              </span>
+
+                              <div className="h-px flex-1 bg-blue-100" />
+                            </div>
+                          )}
+
                           <div
-                            className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                            className={`flex flex-col ${
                               isMine
-                                ? "rounded-tr-sm bg-blue-600 text-white"
-                                : "rounded-tl-sm bg-slate-100 text-slate-800"
+                                ? "items-end"
+                                : "items-start"
                             }`}
                           >
-                            {msg.text}
-                          </div>
-
-                          {/* Seen */}
-                          {isSeen && (
-                            <p className="mt-1 text-[11px] font-medium text-slate-400">
-                              Seen
+                            <p className="mb-1 text-xs font-semibold text-slate-500">
+                              {isMine
+                                ? "You"
+                                : profile?.name ||
+                                  "User"}
                             </p>
-                          )}
+
+                            <div
+                              className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                                isMine
+                                  ? "rounded-tr-sm bg-blue-600 text-white"
+                                  : "rounded-tl-sm bg-slate-100 text-slate-800"
+                              }`}
+                            >
+                              {msg.text}
+                            </div>
+
+                            {isSeen && (
+                              <p className="mt-1 text-[11px] font-medium text-slate-400">
+                                Seen
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })
+                      );
+                    },
+                  )
                 )}
 
-                {/* Latest message target */}
                 <div ref={messagesEndRef} />
               </div>
             )}
@@ -545,16 +607,19 @@ export default function ChatPage() {
           {!blocked && (
             <div className="shrink-0 border-t border-slate-200 bg-white px-3 py-3 sm:px-4 sm:py-4">
               <div className="flex gap-2">
-
                 <input
                   type="text"
                   value={message}
                   disabled={!chatReady}
                   onChange={(e) =>
-                    setMessage(e.target.value)
+                    setMessage(
+                      e.target.value,
+                    )
                   }
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") {
+                    if (
+                      e.key === "Enter"
+                    ) {
                       handleSend();
                     }
                   }}
@@ -573,7 +638,6 @@ export default function ChatPage() {
                 >
                   Send
                 </button>
-
               </div>
             </div>
           )}
@@ -589,9 +653,14 @@ function formatLastSeen(timestamp) {
 
   let lastSeen;
 
-  if (typeof timestamp.toDate === "function") {
+  if (
+    typeof timestamp.toDate ===
+    "function"
+  ) {
     lastSeen = timestamp.toDate();
-  } else if (typeof timestamp === "number") {
+  } else if (
+    typeof timestamp === "number"
+  ) {
     lastSeen = new Date(timestamp);
   } else if (timestamp.seconds) {
     lastSeen = new Date(
@@ -607,7 +676,8 @@ function formatLastSeen(timestamp) {
 
   const diff = Math.max(
     0,
-    Date.now() - lastSeen.getTime(),
+    Date.now() -
+      lastSeen.getTime(),
   );
 
   const minutes = Math.floor(
@@ -635,7 +705,9 @@ function formatLastSeen(timestamp) {
   );
 
   if (days < 7) {
-    return `${days} day${days > 1 ? "s" : ""} ago`;
+    return `${days} day${
+      days > 1 ? "s" : ""
+    } ago`;
   }
 
   return lastSeen.toLocaleDateString();

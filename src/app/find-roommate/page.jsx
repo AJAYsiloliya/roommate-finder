@@ -66,17 +66,13 @@ export default function FindRoommate() {
 
     const profileCity = profile.city?.toLowerCase() || "";
     const profileFood = profile.food?.toLowerCase() || "";
-    const profileOccupation =
-      profile.occupation?.toLowerCase() || "";
+    const profileOccupation = profile.occupation?.toLowerCase() || "";
 
     if (city && profileCity !== city.toLowerCase()) {
       return false;
     }
 
-    if (
-      maxBudget &&
-      Number(profile.budget || 0) > Number(maxBudget)
-    ) {
+    if (maxBudget && Number(profile.budget || 0) > Number(maxBudget)) {
       return false;
     }
 
@@ -84,10 +80,7 @@ export default function FindRoommate() {
       return false;
     }
 
-    if (
-      occupation &&
-      profileOccupation !== occupation.toLowerCase()
-    ) {
+    if (occupation && profileOccupation !== occupation.toLowerCase()) {
       return false;
     }
 
@@ -125,9 +118,7 @@ export default function FindRoommate() {
 
   // Get unique cities
   const cities = [
-    ...new Set(
-      profiles.map((profile) => profile.city).filter(Boolean)
-    ),
+    ...new Set(profiles.map((profile) => profile.city).filter(Boolean)),
   ];
 
   // Loading
@@ -159,8 +150,7 @@ export default function FindRoommate() {
           </h1>
 
           <p className="mt-2 leading-6 text-slate-500">
-            Please login to see roommate profiles and find a suitable
-            roommate.
+            Please login to see roommate profiles and find a suitable roommate.
           </p>
 
           <Link
@@ -187,7 +177,6 @@ export default function FindRoommate() {
   return (
     <main className="min-h-screen bg-slate-50 px-4 pb-16 pt-24 sm:px-6">
       <div className="mx-auto max-w-7xl">
-
         {/* Heading */}
         <div className="mb-8">
           <div className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-600">
@@ -199,14 +188,13 @@ export default function FindRoommate() {
           </h1>
 
           <p className="mt-2 max-w-2xl text-slate-600">
-            Discover people looking for a roommate based on location,
-            budget and lifestyle.
+            Discover people looking for a roommate based on location, budget and
+            lifestyle.
           </p>
         </div>
 
         {/* Search + Filters */}
         <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-
           {/* Search */}
           <div className="relative">
             <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg">
@@ -224,7 +212,6 @@ export default function FindRoommate() {
 
           {/* Filters */}
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-
             {/* City */}
             <select
               value={city}
@@ -340,42 +327,37 @@ export default function FindRoommate() {
         )}
 
         {/* No matching profiles */}
-        {profiles.length > 0 &&
-          filteredProfiles.length === 0 && (
-            <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-3xl">
-                🔎
-              </div>
-
-              <h2 className="mt-5 text-xl font-bold text-slate-900">
-                No matching roommates
-              </h2>
-
-              <p className="mt-2 text-slate-500">
-                Try changing your filters or search.
-              </p>
-
-              <button
-                onClick={clearFilters}
-                className="mt-5 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-700"
-              >
-                Clear Filters
-              </button>
+        {profiles.length > 0 && filteredProfiles.length === 0 && (
+          <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-3xl">
+              🔎
             </div>
-          )}
+
+            <h2 className="mt-5 text-xl font-bold text-slate-900">
+              No matching roommates
+            </h2>
+
+            <p className="mt-2 text-slate-500">
+              Try changing your filters or search.
+            </p>
+
+            <button
+              onClick={clearFilters}
+              className="mt-5 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-700"
+            >
+              Clear Filters
+            </button>
+          </div>
+        )}
 
         {/* Profile Cards */}
         {sortedProfiles.length > 0 && (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {sortedProfiles.map((profile) => (
-              <ProfileCard
-                key={profile.id}
-                profile={profile}
-              />
+              <ProfileCard key={profile.id} profile={profile} />
             ))}
           </div>
         )}
-
       </div>
     </main>
   );
@@ -386,10 +368,8 @@ function ProfileCard({ profile }) {
 
   return (
     <div className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
-
       {/* Card Top */}
       <div className="relative border-b border-slate-100 bg-gradient-to-br from-blue-50 via-white to-slate-50 p-5">
-
         {/* View Profile - Top */}
         <Link
           href={`/profile/${profile.id}`}
@@ -400,7 +380,6 @@ function ProfileCard({ profile }) {
 
         {/* Avatar + Name */}
         <div className="flex items-center gap-4 pr-32">
-
           {profile.photoURL ? (
             <img
               src={profile.photoURL}
@@ -414,25 +393,19 @@ function ProfileCard({ profile }) {
           )}
 
           <div className="min-w-0">
-
             <h2 className="truncate text-lg font-bold text-slate-900">
               {profile.name || "Unknown"}
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              {profile.age
-                ? `${profile.age} years old`
-                : "Age not provided"}
+              {profile.age ? `${profile.age} years old` : "Age not provided"}
             </p>
 
             {/* Online / Last Seen */}
             <div className="mt-1.5 flex items-center gap-1.5">
-
               <span
                 className={`h-2 w-2 rounded-full ${
-                  presence?.online
-                    ? "bg-green-500"
-                    : "bg-slate-300"
+                  presence?.online ? "bg-green-500" : "bg-slate-300"
                 }`}
               />
 
@@ -446,12 +419,9 @@ function ProfileCard({ profile }) {
                 {presence?.online
                   ? "Online"
                   : presence?.lastSeen
-                    ? `Last seen ${formatLastSeen(
-                        presence.lastSeen,
-                      )}`
+                    ? `Last seen ${formatLastSeen(presence.lastSeen)}`
                     : "Offline"}
               </span>
-
             </div>
           </div>
         </div>
@@ -459,14 +429,10 @@ function ProfileCard({ profile }) {
 
       {/* Card Body */}
       <div className="p-5">
-
         {/* Details */}
         <div className="space-y-3">
-
           <div className="flex items-center justify-between gap-4">
-            <span className="text-sm text-slate-500">
-              📍 Location
-            </span>
+            <span className="text-sm text-slate-500">📍 Location</span>
 
             <span className="truncate text-right text-sm font-semibold text-slate-800">
               {profile.city || "Not provided"}
@@ -474,21 +440,15 @@ function ProfileCard({ profile }) {
           </div>
 
           <div className="flex items-center justify-between gap-4">
-            <span className="text-sm text-slate-500">
-              💰 Budget
-            </span>
+            <span className="text-sm text-slate-500">💰 Budget</span>
 
             <span className="text-right text-sm font-semibold text-slate-800">
-              {profile.budget
-                ? `₹${profile.budget}/month`
-                : "Not provided"}
+              {profile.budget ? `₹${profile.budget}/month` : "Not provided"}
             </span>
           </div>
 
           <div className="flex items-center justify-between gap-4">
-            <span className="text-sm text-slate-500">
-              💼 Occupation
-            </span>
+            <span className="text-sm text-slate-500">💼 Occupation</span>
 
             <span className="truncate text-right text-sm font-semibold capitalize text-slate-800">
               {profile.occupation || "Not provided"}
@@ -496,9 +456,7 @@ function ProfileCard({ profile }) {
           </div>
 
           <div className="flex items-center justify-between gap-4">
-            <span className="text-sm text-slate-500">
-              🥗 Food
-            </span>
+            <span className="text-sm text-slate-500">🥗 Food</span>
 
             <span className="text-right text-sm font-semibold capitalize text-slate-800">
               {profile.food || "Not provided"}
@@ -547,10 +505,7 @@ function formatLastSeen(timestamp) {
     return "recently";
   }
 
-  const diff = Math.max(
-    0,
-    Date.now() - lastSeen.getTime(),
-  );
+  const diff = Math.max(0, Date.now() - lastSeen.getTime());
 
   const minutes = Math.floor(diff / 60000);
 
