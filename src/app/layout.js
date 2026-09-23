@@ -27,6 +27,9 @@ export const metadata = {
     "shared accommodation",
     "roommate in India",
   ],
+  verification: {
+    google: "VFujFy8d_F4Cn1dXdBnqbpCE_8ltGBt8e0xQc93QBT4",
+  },
 
   icons: {
     icon: "/favicon.png",
@@ -36,9 +39,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" data-scroll-behavior="smooth">
-      <body
-        className={`${inter.className} bg-slate-50 text-slate-900`}
-      >
+      <body className={`${inter.className} bg-slate-50 text-slate-900`}>
         <Presence />
         <Navbar />
         <main>{children}</main>
