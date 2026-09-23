@@ -12,6 +12,7 @@ import {
   EmailAuthProvider,
   onAuthStateChanged,
   reauthenticateWithCredential,
+  signOut,
 } from "firebase/auth";
 
 import { auth, db } from "@/lib/firebase";
@@ -33,7 +34,6 @@ export default function Profile() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Important: prevents "Please login first" flash during logout
   const [authLoading, setAuthLoading] = useState(true);
 
   const [profileExists, setProfileExists] = useState(false);
@@ -66,8 +66,6 @@ export default function Profile() {
         setAuthLoading(false);
         setLoading(false);
 
-        // Don't show "Please login first."
-        // Directly redirect to login.
         router.replace("/login");
         return;
       }
@@ -272,6 +270,17 @@ export default function Profile() {
     }
   };
 
+  // Logout
+  const handleLogout = async () => {
+    try {
+      setError("");
+      await signOut(auth);
+      router.replace("/login");
+    } catch {
+      setError("Failed to logout. Please try again.");
+    }
+  };
+
   // Auth state is still being checked
   if (authLoading) {
     return (
@@ -332,6 +341,7 @@ export default function Profile() {
           )}
 
           <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+
             {/* Profile Header */}
             <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-700 px-6 py-9 text-white sm:px-8">
               <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-white/10" />
@@ -380,6 +390,7 @@ export default function Profile() {
 
             {/* Main Content */}
             <div className="p-5 sm:p-8">
+
               <button
                 onClick={() => {
                   setSuccess("");
@@ -535,6 +546,26 @@ export default function Profile() {
                   </div>
                 )}
               </div>
+
+              {/* Logout */}
+              <div className="mt-8 border-t border-slate-200 pt-7">
+                <h3 className="text-base font-bold text-slate-900">
+                  Logout
+                </h3>
+
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                  Sign out of your RoommateFinder account on this device.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="mt-4 w-full rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto"
+                >
+                  Logout
+                </button>
+              </div>
+
             </div>
           </div>
 

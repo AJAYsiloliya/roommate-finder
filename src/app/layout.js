@@ -2,6 +2,12 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Presence from "@/components/Presence";
+import { Inter } from "next/font/google";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata = {
   title: {
@@ -27,16 +33,15 @@ export const metadata = {
   },
 };
 
-
 export default function RootLayout({ children }) {
   return (
-    <html lang="en"
-    data-scroll-behavior="smooth"
+    <html lang="en" data-scroll-behavior="smooth">
+      <body
+        className={`${inter.className} bg-slate-50 text-slate-900`}
       >
-      <body>
         <Presence />
         <Navbar />
-       <main>{children}</main> 
+        <main>{children}</main>
         <Footer />
       </body>
     </html>

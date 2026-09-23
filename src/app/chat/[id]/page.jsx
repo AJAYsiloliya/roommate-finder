@@ -1,7 +1,7 @@
 "use client";
 
 import { usePresence } from "@/hooks/usePresence";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -39,6 +39,8 @@ export default function ChatPage() {
   const [error, setError] = useState("");
   const [blocked, setBlocked] = useState(false);
   const [chatReady, setChatReady] = useState(false);
+
+  const messagesEndRef = useRef(null);
 
   const presence = usePresence(receiverId);
 
@@ -251,6 +253,20 @@ export default function ChatPage() {
     return () => unsubscribe();
   }, [chatId, currentUser, chatReady, blocked]);
 
+  // Automatically scroll to latest message
+  useEffect(() => {
+    if (!chatReady || blocked || messages.length === 0) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    });
+  }, [messages, chatReady, blocked]);
+
   // Send normal user message
   const handleSend = async () => {
     if (
@@ -349,7 +365,7 @@ export default function ChatPage() {
 
               {/* Back */}
               <Link
-                href= "/messages"
+                href="/messages"
                 className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-[14px] font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
               >
                 Back
@@ -512,6 +528,9 @@ export default function ChatPage() {
                     );
                   })
                 )}
+
+                {/* Latest message target */}
+                <div ref={messagesEndRef} />
               </div>
             )}
           </div>
