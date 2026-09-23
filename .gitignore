@@ -36,6 +36,5 @@ yarn-error.log*
 # vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Firebase Admin SDK private key
+roommate-finder-6bf02-firebase-adminsdk-fbsvc-b954670745.json
