@@ -202,12 +202,10 @@ export default function ChatPage() {
             const unreadMessages =
               snapshot.docs.filter(
                 (messageDoc) => {
-                  const data =
-                    messageDoc.data();
+                  const data = messageDoc.data();
 
                   const isFromOtherUser =
-                    data.senderId !==
-                    currentUser.uid;
+                    data.senderId !== currentUser.uid;
 
                   const isUnread =
                     !data.readBy?.includes(
@@ -320,7 +318,7 @@ export default function ChatPage() {
   // Loading
   if (loading) {
     return (
-      <main className="fixed inset-0 h-dvh bg-slate-50 px-4 pt-20">
+      <main className="fixed inset-0 z-40 h-dvh bg-slate-50 px-4 pt-20">
         <div className="flex h-full items-center justify-center text-slate-500">
           Loading chat...
         </div>
@@ -331,7 +329,7 @@ export default function ChatPage() {
   // Error
   if (error && !profile) {
     return (
-      <main className="fixed inset-0 h-dvh bg-slate-50 px-4 pt-20">
+      <main className="fixed inset-0 z-40 h-dvh bg-slate-50 px-4 pt-20">
         <div className="flex h-full items-center justify-center">
           <div className="w-full max-w-md rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm">
             <h1 className="text-xl font-bold text-slate-900">
@@ -355,7 +353,7 @@ export default function ChatPage() {
   }
 
   return (
-    <main className="fixed inset-0 h-dvh overflow-hidden bg-slate-50 px-3 pt-20 pb-16 sm:px-5 sm:pt-20 sm:pb-6">
+    <main className="fixed inset-0 z-40 h-dvh overflow-hidden bg-slate-50 px-3 pb-3 pt-20 sm:px-5 sm:pb-6 sm:pt-20">
       <div className="mx-auto h-full w-full max-w-2xl">
         <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
 
@@ -477,7 +475,6 @@ export default function ChatPage() {
 
                     return (
                       <div key={msg.id}>
-
                         {/* Unread */}
                         {isUnread && (
                           <div className="my-4 flex items-center gap-3">
